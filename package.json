@@ -1,0 +1,17 @@
+{
+  "name": "elite-gitbot",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": ["apps/*"],
+  "scripts": {
+    "dev": "npm run dev -w @elite-gitbot/worker",
+    "dev:web": "npm run dev -w @elite-gitbot/web",
+    "build": "npm run build -w @elite-gitbot/web && npm run build -w @elite-gitbot/worker",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "cf-typegen": "npm run cf-typegen -w @elite-gitbot/worker",
+    "deploy": "npm run deploy -w @elite-gitbot/worker"
+  },
+  "engines": { "node": ">=20" }
+}
