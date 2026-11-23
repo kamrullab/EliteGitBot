@@ -45,7 +45,7 @@ EliteGitBot is a self-hosted GitHub App for secure webhook processing, repositor
 | ⚙️ Workflows | GitHub Actions status and failure tracking | ✅ Ready |
 | 🛡️ Security | Secret redaction, Semgrep, and Trivy | ✅ Ready |
 | 📊 Dashboard | Live D1 statistics and responsive light/dark UI | ✅ Ready |
-| 🧠 Gemini/Ollama | Privacy-controlled external provider execution | 🗺️ Planned |
+| 🧠 AI providers | Gemini and any OpenAI-compatible API with safe fallback | ✅ Ready |
 
 ## What is implemented
 
@@ -174,6 +174,13 @@ Install the App only on repositories that should be monitored. EliteGitBot canno
 | `SESSION_SECRET` | yes | at least 32 random bytes |
 | `GEMINI_API_KEY`, `GEMINI_MODEL` | no | reserved external provider configuration |
 | `OLLAMA_BASE_URL`, `OLLAMA_MODEL` | no | reserved trusted Ollama endpoint configuration |
+| `AI_ENABLED` | no | enables the selected external provider when `true` |
+| `AI_PROVIDER` | no | `rule-based`, `gemini`, or `openai-compatible` |
+| `AI_API_KEY` | no | secret for an OpenAI-compatible provider |
+| `AI_BASE_URL` | no | provider API base URL, such as OpenRouter `/api/v1` |
+| `AI_MODEL` | no | provider-specific model identifier |
+| `AI_ALLOWED_HOSTS` | no | comma-separated SSRF protection allowlist |
+| `AI_PRIVATE_REPOSITORIES_ENABLED` | no | explicit opt-in for transmitting private-repository content |
 
 Production secrets are uploaded interactively:
 
@@ -221,8 +228,10 @@ npm run deploy
 | Provider | Cost requirement | Source-code privacy | Availability |
 |---|---|---|---|
 | Rule-based | None | Remains inside the Worker | ✅ Default |
-| Google Gemini | Provider-dependent | Requires explicit private-code consent | 🗺️ Planned |
-| Ollama | Self-hosted infrastructure | Administrator-controlled endpoint | 🗺️ Planned |
+| Google Gemini | Provider-dependent | Requires explicit private-code consent | ✅ Supported |
+| OpenRouter | Free/paid models | Requires explicit private-code consent | ✅ Supported |
+| OpenAI-compatible APIs | Provider-dependent | HTTPS endpoint must be allowlisted | ✅ Supported |
+| Ollama | Self-hosted infrastructure | Must expose a trusted HTTPS OpenAI-compatible endpoint | ✅ Supported |
 
 The deterministic provider detects suspicious credentials, injection patterns, risky HTML sinks, and unsafe logging. Findings are heuristic warnings and never claim that code is secure.
 
@@ -246,8 +255,8 @@ EliteGitBot/
 <a id="roadmap"></a>
 ## 🗺️ Roadmap
 
-- [ ] Complete Gemini and Ollama provider execution
-- [ ] Add encrypted provider settings and SSRF allowlisting
+- [x] Complete Gemini and OpenAI-compatible provider execution
+- [x] Add secret-based provider settings and SSRF allowlisting
 - [ ] Publish and manage GitHub labels
 - [ ] Add manual review and issue-reply approval queues
 - [ ] Ingest Semgrep and Trivy SARIF findings into D1
@@ -263,7 +272,7 @@ EliteGitBot/
 - Inline comments are intentionally not emitted by the current deterministic analyzer because patch positions are not yet mapped to GitHub diff coordinates. Findings are published as general review comments, avoiding invented line numbers.
 - Rule matching is heuristic and cannot prove code secure. Semgrep/Trivy results currently remain in GitHub SARIF; ingestion into D1 is a future enhancement.
 - The implementation analyzes the first 100 changed files. Very large PR pagination is a follow-up.
-- Gemini/Ollama configuration status exists, but the initial production processor deliberately uses the rule provider until explicit private-code consent, encrypted provider settings, SSRF allowlisting, and provider quota handling are completed.
+- External providers use timeouts, schema validation, secret redaction, host allowlisting, and rule-based fallback; provider quotas still depend on the selected service.
 - Queue availability and quotas vary by current Cloudflare plan. If unavailable, replace the producer with a separately deployed Worker/service binding; do not run long AI work synchronously in the webhook.
 - GitHub Discussions do not provide equivalent webhook support for every GitHub App/account combination.
 
@@ -280,6 +289,7 @@ Issues and pull requests are welcome. Before submitting a change:
 
 - [Architecture](docs/ARCHITECTURE.md)
 - [REST API overview](docs/API.md)
+- [AI provider configuration](docs/AI_PROVIDERS.md)
 - [Deployment guide](docs/DEPLOYMENT.md)
 - [Demo and screenshot policy](docs/DEMO.md)
 - [Implementation plan](docs/IMPLEMENTATION_PLAN.md)

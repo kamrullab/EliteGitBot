@@ -8,6 +8,7 @@ import { processEvent } from "./services/events";
 import type { EventJob, GitHubPayload } from "./types";
 import { verifyWebhook } from "./utils/crypto";
 import { GitHubClient } from "./github/client";
+import { createProvider } from "./ai/providers";
 
 type AppEnv = { Bindings: Env; Variables: { userId: number } };
 const app = new Hono<AppEnv>();
@@ -98,8 +99,16 @@ app.post("/api/github/sync", async (c) => {
   return c.json({data:{repositoriesSynced:count}});
 });
 app.get("/api/settings", async (c) => { const system=await c.env.DB.prepare("SELECT key,value FROM system_settings").all<{key:string;value:string}>(); const ai=await c.env.DB.prepare("SELECT enabled,provider,model,max_input_size,max_output_tokens,temperature,private_code_external_enabled,review_instructions,issue_instructions FROM ai_provider_settings WHERE id=1").first(); return c.json({data:{system:Object.fromEntries(system.results.map(x=>[x.key,JSON.parse(x.value)])),ai:ai??{enabled:0,provider:"rule-based"}}}); });
-app.get("/api/ai/providers", (c) => c.json({data:[{id:"rule-based",configured:true},{id:"gemini",configured:Boolean(c.env.GEMINI_API_KEY)},{id:"ollama",configured:Boolean(c.env.OLLAMA_BASE_URL)}]}));
-app.post("/api/ai/test", (c) => c.json({data:{provider:"rule-based",ok:true,message:"Rule-based provider is available"}}));
+app.get("/api/ai/providers", (c) => c.json({data:[
+  {id:"rule-based",configured:true,active:c.env.AI_ENABLED!=="true"||c.env.AI_PROVIDER==="rule-based"},
+  {id:"gemini",configured:Boolean(c.env.GEMINI_API_KEY&&c.env.GEMINI_MODEL),active:c.env.AI_ENABLED==="true"&&c.env.AI_PROVIDER==="gemini"},
+  {id:"openai-compatible",configured:Boolean(c.env.AI_API_KEY&&c.env.AI_BASE_URL&&c.env.AI_MODEL&&c.env.AI_ALLOWED_HOSTS),active:c.env.AI_ENABLED==="true"&&c.env.AI_PROVIDER==="openai-compatible"}
+]}));
+app.post("/api/ai/test", async (c) => {
+  const provider=createProvider(c.env,true);
+  await provider.analyzeIssue("EliteGitBot connection test","Return a safe automated test acknowledgement.");
+  return c.json({data:{provider:provider.name,ok:true,message:`${provider.name} completed a test request`}});
+});
 
 export default {
   fetch: app.fetch,

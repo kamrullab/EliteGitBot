@@ -9,4 +9,12 @@ interface Env {
   GEMINI_MODEL?: string;
   OLLAMA_BASE_URL?: string;
   OLLAMA_MODEL?: string;
+  AI_ENABLED?: string;
+  AI_PROVIDER?: "gemini" | "openai-compatible" | "rule-based";
+  AI_API_KEY?: string;
+  AI_BASE_URL?: string;
+  AI_MODEL?: string;
+  AI_ALLOWED_HOSTS?: string;
+  AI_MAX_INPUT_CHARS?: string;
+  AI_PRIVATE_REPOSITORIES_ENABLED?: string;
 }

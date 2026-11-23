@@ -8,3 +8,16 @@ GEMINI_API_KEY=
 GEMINI_MODEL=gemini-2.0-flash
 OLLAMA_BASE_URL=
 OLLAMA_MODEL=
+
+# AI provider: rule-based, gemini, or openai-compatible
+AI_ENABLED=false
+AI_PROVIDER=rule-based
+AI_MAX_INPUT_CHARS=50000
+AI_PRIVATE_REPOSITORIES_ENABLED=false
+
+# Any OpenAI-compatible API: OpenRouter, OpenAI, Groq, Together, external Ollama, etc.
+AI_API_KEY=
+AI_BASE_URL=https://openrouter.ai/api/v1
+AI_MODEL=openrouter/free
+# Required allowlist for custom endpoints; comma-separated hostnames without paths.
+AI_ALLOWED_HOSTS=openrouter.ai

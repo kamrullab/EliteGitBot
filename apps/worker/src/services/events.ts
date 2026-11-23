@@ -7,6 +7,10 @@ async function log(db: D1Database, type: string, description: string, repository
   await db.prepare("INSERT INTO activity_logs (repository_id,event_type,description,metadata) VALUES (?,?,?,?)").bind(repositoryId ?? null, type, description, JSON.stringify(metadata)).run();
 }
 
+function canSendToExternalAI(env: Env, isPrivate: boolean): boolean {
+  return !isPrivate || env.AI_PRIVATE_REPOSITORIES_ENABLED === "true";
+}
+
 async function installationPk(db: D1Database, githubId: number): Promise<number> {
   const row = await db.prepare("SELECT id FROM github_installations WHERE github_installation_id=?").bind(githubId).first<{ id: number }>();
   if (!row) throw new Error("Installation is not synchronized");
@@ -58,7 +62,7 @@ async function processPullRequest(env: Env, payload: GitHubPayload, repositoryId
   const allFiles = await client.get<PullFile[]>(`/repos/${repo.full_name}/pulls/${number}/files?per_page=100`);
   const excluded = JSON.parse(settings.excluded_paths) as string[];
   const files = allFiles.filter((file) => file.patch && file.patch.length <= settings.max_file_size && !excluded.some((pattern) => pattern.endsWith("/**") ? file.filename.startsWith(pattern.slice(0, -3)) : pattern.startsWith("*.") ? file.filename.endsWith(pattern.slice(1)) : file.filename === pattern));
-  const analysis = await createProvider().analyzePullRequest(pr.title, files);
+  const analysis = await createProvider(env, canSendToExternalAI(env, repo.private)).analyzePullRequest(pr.title, files);
   const risk = analysis.findings.some((finding) => finding.severity === "critical") ? "critical" : analysis.findings.some((finding) => finding.severity === "high") ? "high" : analysis.findings.length ? "medium" : "low";
   const prRow = await env.DB.prepare("SELECT id FROM pull_requests WHERE repository_id=? AND number=?").bind(repositoryId, number).first<{ id: number }>();
   if (!prRow) throw new Error("Pull request persistence failed");
@@ -80,7 +84,7 @@ async function processIssue(env: Env, payload: GitHubPayload, repositoryId: numb
   if (!issue || !repo || !installation || payload.action !== "opened") return;
   const settings = await env.DB.prepare("SELECT issue_automation_enabled,auto_labeling_enabled,require_publish_approval FROM repository_settings WHERE repository_id=?").bind(repositoryId).first<{ issue_automation_enabled: number; auto_labeling_enabled: number; require_publish_approval: number }>();
   if (!settings?.issue_automation_enabled) return;
-  const analysis = await createProvider().analyzeIssue(issue.title, issue.body ?? "");
+  const analysis = await createProvider(env, canSendToExternalAI(env, repo.private)).analyzeIssue(issue.title, issue.body ?? "");
   await env.DB.prepare("INSERT INTO issues (repository_id,github_issue_id,number,title,author,body,state,category,html_url) VALUES (?,?,?,?,?,?,?,?,?) ON CONFLICT(repository_id,number) DO UPDATE SET title=excluded.title,body=excluded.body,state=excluded.state,category=excluded.category,updated_at=CURRENT_TIMESTAMP").bind(repositoryId, issue.id, issue.number, issue.title, issue.user.login, issue.body ?? null, issue.state, analysis.category, issue.html_url).run();
   const issueRow = await env.DB.prepare("SELECT id FROM issues WHERE repository_id=? AND number=?").bind(repositoryId, issue.number).first<{ id: number }>();
   if (!issueRow) return;

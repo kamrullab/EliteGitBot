@@ -13,6 +13,8 @@ npx wrangler d1 migrations apply elite-gitbot --remote --config apps/worker/wran
 
 Upload secrets interactively with `wrangler secret put`. Never place production values in `wrangler.jsonc`, command arguments, logs, or CI output.
 
+Optional AI secrets use `GEMINI_API_KEY` for Gemini or `AI_API_KEY` for an OpenAI-compatible provider. Configure the non-secret provider, base URL, model, and hostname allowlist in the deployment environment. See [AI_PROVIDERS.md](AI_PROVIDERS.md).
+
 ## GitHub App
 
 After deployment, configure the App webhook URL as `https://YOUR_HOST/api/webhooks/github`, set the same webhook secret in GitHub and Cloudflare, select the permissions documented in the README, and install the App only on intended repositories.

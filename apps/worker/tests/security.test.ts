@@ -1,6 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { verifyWebhook } from "../src/utils/crypto";
-import { RuleBasedProvider } from "../src/ai/providers";
+import { GeminiProvider, OpenAICompatibleProvider, RuleBasedProvider } from "../src/ai/providers";
+
+afterEach(() => vi.unstubAllGlobals());
 
 describe("GitHub webhook verification", () => {
   it("accepts a valid SHA-256 signature and rejects tampering", async () => {
@@ -25,5 +27,37 @@ describe("rule-based PR analysis", () => {
     const result = await new RuleBasedProvider().analyzeIssue("App crashes on login", "Reproduction included");
     expect(result.category).toBe("Bug Report");
     expect(result.reply).toContain("automated acknowledgement");
+  });
+});
+
+describe("external AI providers", () => {
+  const analysis = JSON.stringify({ summary: "Review complete", findings: [], recommendation: "needs-human-review" });
+
+  it("parses OpenAI-compatible JSON without exposing the API key in the body", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ choices: [{ message: { content: analysis } }] }), { status: 200, headers: { "Content-Type": "application/json" } }));
+    vi.stubGlobal("fetch", fetchMock);
+    const provider = new OpenAICompatibleProvider({ apiKey: "test-secret-key", baseUrl: "https://openrouter.ai/api/v1", model: "openrouter/free", maxInputChars: 50000 });
+    const result = await provider.analyzePullRequest("Safe change", []);
+    expect(result.provider).toBe("openai-compatible");
+    const request = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(request[0]).toBe("https://openrouter.ai/api/v1/chat/completions");
+    const body = request[1].body;
+    expect(typeof body).toBe("string");
+    if (typeof body !== "string") throw new Error("Expected serialized request body");
+    expect(body).not.toContain("test-secret-key");
+  });
+
+  it("uses Gemini structured JSON mode", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: analysis }] } }] }), { status: 200, headers: { "Content-Type": "application/json" } }));
+    vi.stubGlobal("fetch", fetchMock);
+    const provider = new GeminiProvider({ apiKey: "gemini-test-key", baseUrl: "https://generativelanguage.googleapis.com", model: "gemini-test", maxInputChars: 50000 });
+    const result = await provider.analyzePullRequest("Safe change", []);
+    expect(result.provider).toBe("gemini");
+    const request = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(request[0]).toContain("generativelanguage.googleapis.com");
+    const body = request[1].body;
+    expect(typeof body).toBe("string");
+    if (typeof body !== "string") throw new Error("Expected serialized request body");
+    expect(body).not.toContain("gemini-test-key");
   });
 });
