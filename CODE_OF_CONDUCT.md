@@ -1,4 +1,16 @@
-# Contributor Covenant Code of Conduct
+<div align="center">
+
+# 💖 Contributor Covenant Code of Conduct
+
+[![Community](https://img.shields.io/badge/Community-Welcoming-EC4899?style=for-the-badge&logo=githubsponsors&logoColor=white)](CODE_OF_CONDUCT.md)
+[![Respect](https://img.shields.io/badge/Standard-Respect-8B5CF6?style=for-the-badge&logo=handshake&logoColor=white)](#our-standards)
+[![Version](https://img.shields.io/badge/Covenant-2.1-0EA5E9?style=for-the-badge)](https://www.contributor-covenant.org/version/2/1/code_of_conduct.html)
+
+**A respectful, inclusive, and harassment-free community for everyone.**
+
+</div>
+
+---
 
 ## Our pledge
 

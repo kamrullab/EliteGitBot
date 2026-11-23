@@ -285,25 +285,6 @@ Issues and pull requests are welcome. Before submitting a change:
 3. Run `npm run lint`, `npm run typecheck`, and `npm test`.
 4. Document security-sensitive behavior and include tests.
 
-## 🌈 Community & governance
-
-<div align="center">
-
-[![Code of Conduct](https://img.shields.io/badge/Code_of_Conduct-Be_Kind-EC4899?style=for-the-badge&logo=githubsponsors&logoColor=white)](CODE_OF_CONDUCT.md)
-[![Contributing](https://img.shields.io/badge/Contributing-Join_Us-7C3AED?style=for-the-badge&logo=git&logoColor=white)](CONTRIBUTING.md)
-[![Security](https://img.shields.io/badge/Security-Report_Privately-DC2626?style=for-the-badge&logo=hackthebox&logoColor=white)](SECURITY.md)
-
-</div>
-
-| Resource | Purpose |
-|---|---|
-| 💖 [Code of Conduct](CODE_OF_CONDUCT.md) | Community standards and respectful participation |
-| 🛠️ [Contributing Guide](CONTRIBUTING.md) | Development workflow, tests, and pull-request expectations |
-| 🔐 [Security Policy](SECURITY.md) | Private vulnerability reporting and supported versions |
-
-> [!TIP]
-> Security vulnerabilities should be reported privately through GitHub Security Advisories—never through a public issue.
-
 ## 📚 Documentation
 
 - [Architecture](docs/ARCHITECTURE.md)

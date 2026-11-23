@@ -1,4 +1,16 @@
-# Security policy
+<div align="center">
+
+# 🔐 Security Policy
+
+[![Security](https://img.shields.io/badge/Security-Private_Reports-DC2626?style=for-the-badge&logo=hackthebox&logoColor=white)](https://github.com/kamrullab/EliteGitBot/security/advisories/new)
+[![Secrets](https://img.shields.io/badge/Secrets-Never_Commit-F97316?style=for-the-badge&logo=1password&logoColor=white)](#security-boundaries)
+[![Safe Defaults](https://img.shields.io/badge/Defaults-Non--Destructive-16A34A?style=for-the-badge&logo=shieldsdotio&logoColor=white)](#security-boundaries)
+
+**Report vulnerabilities privately so they can be fixed before public disclosure.**
+
+</div>
+
+---
 
 ## Supported versions
 
