@@ -1,0 +1,8 @@
+import { useQuery } from "@tanstack/react-query";
+import { AlertTriangle, Boxes, CircleDot, GitPullRequest, ScanSearch, ShieldCheck, Workflow, Zap } from "lucide-react";
+import { api } from "../api";
+type Stats=Record<string,number>;
+const cards=[["totalRepositories","Total repositories",Boxes],["monitoredRepositories","Monitored",ScanSearch],["openPullRequests","Open PRs",GitPullRequest],["reviewedPullRequests","Reviewed PRs",ShieldCheck],["openIssues","Open issues",CircleDot],["answeredIssues","Auto answered",Zap],["securityFindings","Security findings",AlertTriangle],["failedWorkflows","Failed workflows",Workflow]] as const;
+export function Overview(){const q=useQuery({queryKey:["stats"],queryFn:()=>api<Stats>("/api/dashboard/stats")});if(q.isLoading)return <Skeleton/>;if(q.isError)return <State title="Dashboard unavailable" text={q.error.message}/>;return <><section className="hero"><div><span className="eyebrow">SYSTEM OVERVIEW</span><h2>Your repositories, under watch.</h2><p>Live signals from GitHub webhooks and persisted automation activity.</p></div><span className="live"><i/> Live</span></section><div className="stats">{cards.map(([key,label,Icon])=><article className="stat" key={key}><div className="stat-icon"><Icon/></div><div><span>{label}</span><strong>{q.data?.[key]??0}</strong></div></article>)}</div></>}
+function Skeleton(){return <div className="stats">{Array.from({length:8},(_,i)=><div className="stat skeleton" key={i}/>)}</div>}
+function State({title,text}:{title:string;text:string}){return <div className="empty"><AlertTriangle/><h2>{title}</h2><p>{text}</p></div>}
