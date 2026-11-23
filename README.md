@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/assets/elitegitbot-banner.png" alt="EliteGitBot — secure GitHub automation" width="100%">
+
 # 🤖 EliteGitBot
 
 ### Secure GitHub automation, running at the edge
@@ -12,6 +14,8 @@ Monitor repositories, review pull requests, triage issues, track workflows, and 
 [![Hono](https://img.shields.io/badge/Hono-API-E36002?style=for-the-badge&logo=hono&logoColor=white)](https://hono.dev/)
 
 [![Security Analysis](https://github.com/kamrullab/EliteGitBot/actions/workflows/security-analysis.yml/badge.svg)](https://github.com/kamrullab/EliteGitBot/actions/workflows/security-analysis.yml)
+[![CI](https://github.com/kamrullab/EliteGitBot/actions/workflows/ci.yml/badge.svg)](https://github.com/kamrullab/EliteGitBot/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-22C55E.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![Database](https://img.shields.io/badge/Database-Cloudflare_D1-F38020?logo=cloudflare&logoColor=white)](https://developers.cloudflare.com/d1/)
 [![AI Optional](https://img.shields.io/badge/AI-Optional-8B5CF6)](#analysis-providers)
@@ -123,6 +127,16 @@ npx wrangler d1 migrations apply elite-gitbot --local --config apps/worker/wrang
 npm run dev
 npm run dev:web
 ```
+
+### Docker alternative
+
+After creating `apps/worker/.dev.vars`:
+
+```bash
+docker compose up --build
+```
+
+The dashboard is available at `http://localhost:5173` and the Worker at `http://localhost:8787`.
 
 Create an admin password hash without sending the password anywhere:
 
@@ -264,10 +278,17 @@ Issues and pull requests are welcome. Before submitting a change:
 
 ## 📚 Documentation
 
+- [Architecture](docs/ARCHITECTURE.md)
+- [REST API overview](docs/API.md)
+- [Deployment guide](docs/DEPLOYMENT.md)
+- [Demo and screenshot policy](docs/DEMO.md)
 - [Implementation plan](docs/IMPLEMENTATION_PLAN.md)
 - [Example local configuration](.dev.vars.example)
 - [D1 schema](migrations/0001_initial.sql)
 - [Worker configuration](apps/worker/wrangler.jsonc)
+- [Contributing guide](CONTRIBUTING.md)
+- [Security policy](SECURITY.md)
+- [Changelog](CHANGELOG.md)
 
 ---
 

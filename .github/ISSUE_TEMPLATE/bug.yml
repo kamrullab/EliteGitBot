@@ -1,0 +1,44 @@
+name: Bug report
+description: Report a reproducible problem in EliteGitBot
+title: "[Bug]: "
+labels: [bug, needs-triage]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for reporting a problem. Remove credentials and private repository content before submitting.
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened, and what did you expect?
+    validations: { required: true }
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      placeholder: "1. Configure…\n2. Send…\n3. Observe…"
+    validations: { required: true }
+  - type: input
+    id: version
+    attributes: { label: Version or commit }
+    validations: { required: true }
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options: [Worker API, Dashboard, GitHub integration, D1 migration, Queue processing, Documentation, Other]
+    validations: { required: true }
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitized logs
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Safety checklist
+      options:
+        - label: I removed secrets, tokens, and private source code.
+          required: true
+        - label: This is not a security vulnerability.
+          required: true

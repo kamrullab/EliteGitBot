@@ -1,0 +1,19 @@
+services:
+  worker:
+    build: .
+    command: npm run dev -- --ip 0.0.0.0
+    env_file:
+      - path: apps/worker/.dev.vars
+        required: false
+    ports: ["8787:8787"]
+    volumes:
+      - worker-state:/app/apps/worker/.wrangler
+  web:
+    build: .
+    command: npm run dev:web -- --host 0.0.0.0
+    environment:
+      VITE_API_PROXY_TARGET: http://worker:8787
+    ports: ["5173:5173"]
+    depends_on: [worker]
+volumes:
+  worker-state:
