@@ -86,3 +86,23 @@ body{background:#f6f7f9;line-height:1.5}button,input,select{font:inherit}button{
   .sidebar nav::-webkit-scrollbar{display:none;width:0;height:0}
   .sidebar-foot{flex:0 0 auto;margin-top:8px;padding-bottom:max(0px,env(safe-area-inset-bottom));background:#0c0d10}
 }
+
+/* Apply light mode to the complete navigation shell, not only page content. */
+:root:not(.dark) .sidebar{background:#fff;color:#3f3f46;border-color:#e4e4e7;box-shadow:14px 0 40px #18181b12}
+:root:not(.dark) .brand strong{color:#18181b}
+:root:not(.dark) .brand span,:root:not(.dark) .sidebar-foot{color:#71717a}
+:root:not(.dark) .sidebar nav a{color:#52525b}
+:root:not(.dark) .sidebar nav a:hover{background:#f4f4f5;color:#18181b}
+:root:not(.dark) .sidebar nav a.active{background:#ede9fe;color:#6d28d9}
+:root:not(.dark) .sidebar-foot{background:#fff;border-color:#e4e4e7}
+:root:not(.dark) .sidebar-foot button{color:#52525b}
+:root:not(.dark) .sidebar-foot button:hover{background:#f4f4f5;color:#18181b}
+:root:not(.dark) .mobile-close{color:#27272a}
+:root:not(.dark) .backdrop{background:#18181b66}
+:root:not(.dark) .hero{color:#18181b;background:radial-gradient(circle at 85% 20%,#c4b5fd 0,transparent 34%),linear-gradient(135deg,#fff,#f5f3ff);border-color:#ddd6fe}
+:root:not(.dark) .hero p{color:#52525b}
+:root:not(.dark) .hero .live{background:#fff9;color:#4c1d95}
+:root:not(.dark) .login-page{background:radial-gradient(circle at center,#ede9fe,#f6f7f9 68%)}
+:root:not(.dark) .login-card{background:#fff;color:#18181b;border-color:#e4e4e7;box-shadow:0 30px 80px #312e8118}
+:root:not(.dark) .login-card>p,:root:not(.dark) .login-card label{color:#71717a}
+:root:not(.dark) .login-card input{background:#fff;color:#18181b;border-color:#d4d4d8}

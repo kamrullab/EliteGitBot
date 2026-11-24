@@ -9,6 +9,10 @@ import { DataPage } from "./pages/DataPage";
 import { Settings } from "./pages/Settings";
 import "./styles.css";
 
+const initialDark=localStorage.theme?localStorage.theme==="dark":matchMedia("(prefers-color-scheme: dark)").matches;
+document.documentElement.classList.toggle("dark",initialDark);
+document.querySelector('meta[name="theme-color"]')?.setAttribute("content",initialDark?"#09090b":"#f6f7f9");
+
 const queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 15000, retry: 1 } } });
 const routes = createBrowserRouter([
   { path: "/login", element: <Login /> },
