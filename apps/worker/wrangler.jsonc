@@ -18,7 +18,7 @@
   "d1_databases": [{
     "binding": "DB",
     "database_name": "elite-gitbot",
-    "database_id": "replace-with-d1-database-id",
+    "database_id": "1a8d3c46-c604-4e0b-868e-5b983e1c0f54",
     "migrations_dir": "../../migrations"
   }],
   "queues": {
