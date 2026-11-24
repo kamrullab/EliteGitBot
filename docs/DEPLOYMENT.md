@@ -206,16 +206,7 @@ Repository permissions:
 
 Leave every permission not listed above at **No access**.
 
-Permission reference:
-
-| | |
-|---|---|
-| ![Actions and checks permissions](assets/deployment/github-permissions-1.png) | ![Contents, statuses, and issues permissions](assets/deployment/github-permissions-2.png) |
-| ![Pull request and remaining permissions](assets/deployment/github-permissions-3.png) | |
-
 Subscribe to `security_advisory`, `check_suite`, `issue_comment`, `issues`, `pull_request`, `pull_request_review`, `pull_request_review_comment`, `push`, `release`, `repository`, and `workflow_run`. GitHub delivers installation lifecycle events needed by the App automatically; they may not appear as selectable checkboxes.
-
-![GitHub App event subscriptions](assets/deployment/github-events.png)
 
 After creating the App:
 
@@ -226,11 +217,7 @@ After creating the App:
 
 Generate the key from **Credentials → Key pairs → New key**:
 
-![Generate a GitHub App private key](assets/deployment/github-app-key-pairs.png)
-
 Upload the project logo under **Display information**. Leave the IP allow list empty for a Workers deployment because Workers do not provide a single fixed outbound IP for this purpose.
-
-![GitHub App display information](assets/deployment/github-display-info.png)
 
 ## 11. Verify the deployment
 
