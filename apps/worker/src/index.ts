@@ -1,5 +1,4 @@
 import { Hono, type Context } from "hono";
-import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
@@ -15,7 +14,6 @@ type AppEnv = { Bindings: Env; Variables: { userId: number } };
 const app = new Hono<AppEnv>();
 
 app.use("*", secureHeaders({ contentSecurityPolicy: { defaultSrc: ["'self'"], styleSrc: ["'self'", "'unsafe-inline'"], imgSrc: ["'self'", "data:"], connectSrc: ["'self'"] } }));
-app.use("/api/*", cors({ origin: (origin) => origin, credentials: true, allowHeaders: ["Content-Type", "X-CSRF-Token"] }));
 
 app.onError((error, c) => {
   console.error(JSON.stringify({ message: "request_failed", error: error.message, path: c.req.path }));
@@ -69,8 +67,10 @@ app.get("/api/dashboard/stats", async (c) => {
 });
 
 function page(c: Context<AppEnv>): { limit: number; offset: number } {
-  const limit = Math.min(100, Math.max(1, Number(c.req.query("limit") ?? 25)));
-  const offset = Math.max(0, Number(c.req.query("offset") ?? 0));
+  const rawLimit = Number(c.req.query("limit") ?? 25);
+  const rawOffset = Number(c.req.query("offset") ?? 0);
+  const limit = Number.isFinite(rawLimit) ? Math.min(100, Math.max(1, Math.trunc(rawLimit))) : 25;
+  const offset = Number.isFinite(rawOffset) ? Math.max(0, Math.trunc(rawOffset)) : 0;
   return { limit, offset };
 }
 

@@ -10,7 +10,7 @@ async function log(db: D1Database, type: string, description: string, repository
 async function canSendToExternalAI(env: Env, isPrivate: boolean): Promise<boolean> {
   if (!isPrivate) return true;
   const settings = await env.DB.prepare("SELECT private_code_external_enabled FROM ai_provider_settings WHERE id=1").first<{ private_code_external_enabled: number }>();
-  return settings ? Boolean(settings.private_code_external_enabled) : env.AI_PRIVATE_REPOSITORIES_ENABLED === "true";
+  return settings ? Boolean(settings.private_code_external_enabled) : String(env.AI_PRIVATE_REPOSITORIES_ENABLED) === "true";
 }
 
 async function installationPk(db: D1Database, githubId: number): Promise<number> {

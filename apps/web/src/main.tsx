@@ -24,7 +24,8 @@ const routes = createBrowserRouter([
     { path: "settings", element: <Settings /> },
     { path: "ai", element: <Settings /> },
     { path: "automation", element: <Settings /> },
-    { path: "github", element: <Settings /> }
+    { path: "github", element: <Settings /> },
+    { path: "*", element: <Navigate to="/" replace /> }
   ]}
 ]);
 ReactDOM.createRoot(document.getElementById("root")!).render(<React.StrictMode><QueryClientProvider client={queryClient}><RouterProvider router={routes} /></QueryClientProvider></React.StrictMode>);

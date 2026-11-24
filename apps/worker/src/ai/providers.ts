@@ -165,13 +165,13 @@ export async function getAISettings(env: Env): Promise<StoredAISettings & { apiK
   const stored = await env.DB.prepare("SELECT enabled,provider,model,base_url,allowed_hosts,max_input_size,private_code_external_enabled FROM ai_provider_settings WHERE id=1").first<StoredAISettings>();
   if (stored) return { ...stored, apiKeyConfigured: Boolean(await env.DB.prepare("SELECT 1 configured FROM managed_secrets WHERE name='ai_api_key'").first()) };
   return {
-    enabled: env.AI_ENABLED === "true" ? 1 : 0,
+    enabled: String(env.AI_ENABLED) === "true" ? 1 : 0,
     provider: env.AI_PROVIDER ?? "rule-based",
     model: env.AI_MODEL ?? env.GEMINI_MODEL ?? null,
     base_url: env.AI_BASE_URL ?? null,
     allowed_hosts: env.AI_ALLOWED_HOSTS ?? null,
     max_input_size: Number(env.AI_MAX_INPUT_CHARS ?? 50000),
-    private_code_external_enabled: env.AI_PRIVATE_REPOSITORIES_ENABLED === "true" ? 1 : 0,
+    private_code_external_enabled: String(env.AI_PRIVATE_REPOSITORIES_ENABLED) === "true" ? 1 : 0,
     apiKeyConfigured: Boolean(env.AI_API_KEY || env.GEMINI_API_KEY)
   };
 }
