@@ -106,6 +106,15 @@ npx wrangler secret put SESSION_SECRET --config apps/worker/wrangler.jsonc
 
 For `GITHUB_PRIVATE_KEY`, paste the complete PEM including the BEGIN/END lines. Wrangler secrets are not committed and normal deployments do not delete existing secrets.
 
+GitHub may download the key as PKCS#1 (`BEGIN RSA PRIVATE KEY`), while EliteGitBot imports PKCS#8 (`BEGIN PRIVATE KEY`). Convert it locally before upload:
+
+```bash
+openssl pkcs8 -topk8 -nocrypt -in github-app.private-key.pem -out github-app.pkcs8.pem
+npx wrangler secret put GITHUB_PRIVATE_KEY --config apps/worker/wrangler.jsonc
+```
+
+Paste the converted PKCS#8 file into Wrangler's prompt. Never commit either key file. Delete the converted copy after upload and retain the original only in secure private storage.
+
 ## 8. Configure optional AI
 
 The committed production default is free local rule analysis:
@@ -146,6 +155,9 @@ npx wrangler secret put AI_API_KEY --config apps/worker/wrangler.jsonc
 ```
 
 Keep `AI_PRIVATE_REPOSITORIES_ENABLED` set to `false` unless you explicitly accept the selected provider's source-code privacy and retention terms. See [AI provider configuration](AI_PROVIDERS.md).
+
+> [!TIP]
+> For a completely free first deployment, leave AI disabled. Rule-based analysis works without Gemini, OpenRouter, billing, or an API key.
 
 ## 9. Build and deploy
 
@@ -189,9 +201,19 @@ Repository permissions:
 | Actions | Read |
 | Checks | Read |
 | Commit statuses | Read |
-| Security events | Read, when available |
 
-Subscribe to `pull_request`, `pull_request_review`, `pull_request_review_comment`, `issues`, `issue_comment`, `push`, `release`, `workflow_run`, `check_suite`, `installation`, `installation_repositories`, and `repository`.
+Leave every permission not listed above at **No access**.
+
+Permission reference:
+
+| | |
+|---|---|
+| ![Actions and checks permissions](assets/deployment/github-permissions-1.png) | ![Contents, statuses, and issues permissions](assets/deployment/github-permissions-2.png) |
+| ![Pull request and remaining permissions](assets/deployment/github-permissions-3.png) | |
+
+Subscribe to `security_advisory`, `check_suite`, `issue_comment`, `issues`, `pull_request`, `pull_request_review`, `pull_request_review_comment`, `push`, `release`, `repository`, and `workflow_run`. GitHub delivers installation lifecycle events needed by the App automatically; they may not appear as selectable checkboxes.
+
+![GitHub App event subscriptions](assets/deployment/github-events.png)
 
 After creating the App:
 
@@ -199,6 +221,14 @@ After creating the App:
 2. Generate a private key, download it once, and upload it as `GITHUB_PRIVATE_KEY`.
 3. Install the App only on repositories you want EliteGitBot to access.
 4. Redeploy only if code/config changed; updating a Wrangler secret deploys a new version automatically.
+
+Generate the key from **Credentials → Key pairs → New key**:
+
+![Generate a GitHub App private key](assets/deployment/github-app-key-pairs.png)
+
+Upload the project logo under **Display information**. Leave the IP allow list empty for a Workers deployment because Workers do not provide a single fixed outbound IP for this purpose.
+
+![GitHub App display information](assets/deployment/github-display-info.png)
 
 ## 11. Verify the deployment
 

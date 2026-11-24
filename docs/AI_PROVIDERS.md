@@ -8,7 +8,50 @@ EliteGitBot supports three runtime modes through one provider interface:
 
 If an external request fails, times out, or returns invalid structured output, EliteGitBot records a structured error log without credentials and falls back to deterministic rules.
 
+## Which mode should I choose?
+
+| Goal | Recommended mode | Cost notes |
+|---|---|---|
+| No account, no external code sharing | `rule-based` | Always free and enabled by default |
+| Free AI with a direct provider | `gemini` | Google offers a limited free tier; current quotas apply |
+| Try multiple free models with one key | `openai-compatible` + OpenRouter | `openrouter/free` is rate-limited and model availability can change |
+| Predictable production behavior | A pinned paid/free model | Check the provider's current price and retention policy |
+
+For a public repository and a fully free setup, start with `rule-based`. Add Gemini or OpenRouter only after the GitHub App and dashboard work correctly.
+
+## Production quick start
+
+AI configuration has two parts:
+
+1. Non-secret values go in `apps/worker/wrangler.jsonc` under `vars`.
+2. API keys go to Cloudflare encrypted secrets with `wrangler secret put`.
+
+Never put an API key in `wrangler.jsonc`, `.dev.vars.example`, a screenshot, an issue, or a Git commit.
+
 ## Gemini
+
+1. Open [Google AI Studio API keys](https://aistudio.google.com/app/apikey) and create/copy a key.
+2. In `apps/worker/wrangler.jsonc`, set:
+
+```jsonc
+"AI_ENABLED": "true",
+"AI_PROVIDER": "gemini",
+"GEMINI_MODEL": "YOUR_CURRENT_GEMINI_MODEL",
+"AI_MAX_INPUT_CHARS": "50000",
+"AI_PRIVATE_REPOSITORIES_ENABLED": "false"
+```
+
+3. Upload the key interactively and deploy the changed variables:
+
+```bash
+npx wrangler secret put GEMINI_API_KEY --config apps/worker/wrangler.jsonc
+npm run build
+npm run deploy
+```
+
+Use a model identifier currently listed in the official Gemini documentation or AI Studio. Model names and free-tier quotas change, so the repository intentionally does not hardcode a temporary free model.
+
+Equivalent local-development values are:
 
 ```dotenv
 AI_ENABLED=true
@@ -23,6 +66,29 @@ Store `GEMINI_API_KEY` with `wrangler secret put`, not in committed files.
 
 ## OpenRouter
 
+1. Create a key from the [OpenRouter keys page](https://openrouter.ai/settings/keys).
+2. In `apps/worker/wrangler.jsonc`, set:
+
+```jsonc
+"AI_ENABLED": "true",
+"AI_PROVIDER": "openai-compatible",
+"AI_BASE_URL": "https://openrouter.ai/api/v1",
+"AI_MODEL": "openrouter/free",
+"AI_ALLOWED_HOSTS": "openrouter.ai",
+"AI_MAX_INPUT_CHARS": "50000",
+"AI_PRIVATE_REPOSITORIES_ENABLED": "false"
+```
+
+3. Upload the key and deploy:
+
+```bash
+npx wrangler secret put AI_API_KEY --config apps/worker/wrangler.jsonc
+npm run build
+npm run deploy
+```
+
+Equivalent local-development values are:
+
 ```dotenv
 AI_ENABLED=true
 AI_PROVIDER=openai-compatible
@@ -34,6 +100,27 @@ AI_PRIVATE_REPOSITORIES_ENABLED=false
 ```
 
 Change `AI_MODEL` to a specific model when predictable behavior matters. Free routers and model availability may change.
+
+## Verify the active provider
+
+1. Sign in at `https://YOUR_WORKER/login`.
+2. Open the dashboard AI/settings area, or request `GET /api/ai/providers` in the authenticated browser session.
+3. Confirm the chosen provider reports `configured: true` and `active: true`.
+4. Call `POST /api/ai/test` from the authenticated dashboard/session. A successful response identifies the provider used.
+5. Check Cloudflare logs if the test falls back to rules:
+
+```bash
+npx wrangler tail gitbot --config apps/worker/wrangler.jsonc
+```
+
+The test endpoint is authenticated and never returns the stored API key.
+
+To disable external AI immediately, restore these committed defaults and deploy:
+
+```jsonc
+"AI_ENABLED": "false",
+"AI_PROVIDER": "rule-based"
+```
 
 ## Other OpenAI-compatible services
 
