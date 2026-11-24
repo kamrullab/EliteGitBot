@@ -22,8 +22,13 @@ async function installationPk(db: D1Database, githubId: number): Promise<number>
 async function syncInstallation(env: Env, payload: GitHubPayload): Promise<void> {
   const installation = payload.installation;
   if (!installation) return;
-  await env.DB.prepare("INSERT INTO github_installations (github_installation_id,account_login,account_type,suspended_at) VALUES (?,?,?,?) ON CONFLICT(github_installation_id) DO UPDATE SET account_login=excluded.account_login,account_type=excluded.account_type,suspended_at=excluded.suspended_at,updated_at=CURRENT_TIMESTAMP").bind(installation.id, installation.account.login, installation.account.type, installation.suspended_at ?? null).run();
-  await log(env.DB, "installation", `GitHub App installation ${payload.action ?? "updated"}`, undefined, { installationId: installation.id });
+  if (installation.account) {
+    await env.DB.prepare("INSERT INTO github_installations (github_installation_id,account_login,account_type,suspended_at) VALUES (?,?,?,?) ON CONFLICT(github_installation_id) DO UPDATE SET account_login=excluded.account_login,account_type=excluded.account_type,suspended_at=excluded.suspended_at,updated_at=CURRENT_TIMESTAMP").bind(installation.id, installation.account.login, installation.account.type, installation.suspended_at ?? null).run();
+    await log(env.DB, "installation", `GitHub App installation ${payload.action ?? "updated"}`, undefined, { installationId: installation.id });
+    return;
+  }
+  const existing = await env.DB.prepare("SELECT id FROM github_installations WHERE github_installation_id=?").bind(installation.id).first();
+  if (!existing) throw new Error("Installation details have not been synchronized");
 }
 
 async function syncRepository(env: Env, payload: GitHubPayload): Promise<number | undefined> {

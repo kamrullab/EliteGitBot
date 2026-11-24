@@ -2,7 +2,7 @@ export type EventJob = { deliveryId: string; event: string; payload: GitHubPaylo
 
 export type GitHubPayload = {
   action?: string;
-  installation?: { id: number; account: { login: string; type: string }; suspended_at?: string | null };
+  installation?: { id: number; account?: { login: string; type: string }; suspended_at?: string | null };
   repository?: { id: number; name: string; full_name: string; private: boolean; visibility?: string; default_branch: string; archived: boolean; owner: { login: string } };
   pull_request?: { id: number; number?: number; title: string; state: string; html_url: string; head: { sha: string }; base: { ref: string }; user: { login: string } };
   issue?: { id: number; number: number; title: string; body?: string | null; state: string; html_url: string; user: { login: string } };
