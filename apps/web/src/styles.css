@@ -62,3 +62,16 @@ body{background:#f6f7f9;line-height:1.5}button,input,select{font:inherit}button{
 /* Polished data and activity tables */
 .data-page .table-card{background:linear-gradient(180deg,#fff,#fcfcfd);box-shadow:0 16px 50px #18181b08}.dark .data-page .table-card{background:linear-gradient(180deg,#121216,#0f0f12);box-shadow:0 18px 55px #0003}.data-page table{font-size:13px}.data-page th{position:sticky;top:0;z-index:2;padding-block:13px;background:#f7f7f9;color:#71717a;font-weight:800;letter-spacing:.09em}.dark .data-page th{background:#18181d;color:#8b8b98}.data-page tbody tr{transition:background-color .16s}.data-page tbody tr:nth-child(even){background:#71717a05}.dark .data-page tbody tr:nth-child(even){background:#ffffff03}.data-page tbody tr:hover{background:#8b5cf60a}.dark .data-page tbody tr:hover{background:#8b5cf610}.data-page td{height:58px;color:#27272a}.dark .data-page td{color:#e4e4e7}.event-badge{display:inline-flex;align-items:center;width:max-content;max-width:100%;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:750;line-height:1.2;background:#71717a16;color:#52525b;white-space:nowrap}.dark .event-badge{background:#71717a20;color:#c4c4cc}.event-badge.info{background:#8b5cf618;color:#7c3aed}.dark .event-badge.info{color:#a78bfa}.event-badge.good{background:#22c55e16;color:#15803d}.dark .event-badge.good{color:#4ade80}.event-badge.danger{background:#ef444416;color:#dc2626}.dark .event-badge.danger{color:#f87171}.table-time{font-variant-numeric:tabular-nums;color:#52525b;white-space:nowrap}.dark .table-time{color:#a1a1aa}.table-link{display:inline-flex;gap:4px;align-items:center;font-weight:700;text-decoration:none}.table-link:hover{text-decoration:underline}.data-page .empty{background:linear-gradient(145deg,#fff,#faf8ff)}.dark .data-page .empty{background:radial-gradient(circle at 50% 0,#7c3aed0d,transparent 35%),#0f0f12}
 @media(max-width:600px){.data-page tbody tr{padding:7px 14px}.data-page td{height:auto}.event-badge{justify-self:end;white-space:normal;text-align:right}.table-time{white-space:normal;text-align:right}}
+
+/* Fluid settings layouts: never crop cards or their dynamic rows. */
+.settings-grid,.settings-grid>.panel,.settings-form{min-width:0}
+.settings-grid>.panel{overflow:visible}
+.panel h3,.panel p,.setting-row span{overflow-wrap:anywhere}
+@media(min-width:901px){
+  .content>section:has(>.settings-grid),.content>section:has(>.settings-form){height:auto;min-height:100%;overflow:visible}
+  .content>section>.settings-grid:not(.single){flex:none;grid-template-rows:none;grid-auto-rows:auto;align-items:stretch}
+  .content>section>.settings-grid:not(.single)>.panel{min-height:0;overflow:visible}
+}
+@media(min-width:901px) and (max-width:1150px){
+  .content>section>.settings-grid:not(.single){grid-template-columns:minmax(0,1fr)}
+}
