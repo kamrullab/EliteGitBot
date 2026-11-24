@@ -133,3 +133,20 @@ body{background:#f6f7f9;line-height:1.5}button,input,select{font:inherit}button{
 .data-page .url-column{width:8%}
 @media(max-width:1200px) and (min-width:901px){.data-page th:first-child,.data-page td:first-child{width:22%}.data-page table{font-size:12px}.data-page th,.data-page td{padding-inline:11px}}
 @media(max-width:900px){.data-page .table-card{max-height:none;overflow:visible}.data-page th:first-child,.data-page td:first-child,.data-page .url-column{width:auto}}
+
+/* Keep the public hero inside the first viewport and make sign-in compact. */
+.home-nav{height:72px}
+.home-hero{height:calc(100svh - 72px);min-height:560px;max-height:760px;padding:32px 0;align-content:center}
+.home-copy h1{font-size:clamp(42px,4.8vw,66px)}
+.bot-stage{width:min(430px,100%)}
+.login-page{min-height:100svh;padding:18px;overflow:auto}
+.login-card{width:min(380px,100%);padding:30px;border-radius:20px;text-align:center;box-shadow:0 24px 70px #0007}
+.login-card .login-logo{margin:0 auto 18px}
+.login-card h1{font-size:30px;letter-spacing:-.035em}
+.login-card>p{margin:7px 0 22px}
+.login-card label{text-align:left;margin:12px 0}
+.login-card input{min-height:46px;margin-top:6px}
+.login-card .primary{min-height:48px;margin-top:17px}
+@media(max-height:700px) and (min-width:901px){.home-hero{min-height:500px;padding:22px 0}.home-copy h1{font-size:clamp(38px,4.4vw,58px);margin-block:12px}.home-copy>p{font-size:16px;line-height:1.55}.home-actions{margin-top:20px}.home-trust{margin-top:18px}.bot-stage{width:min(380px,100%)}}
+@media(max-width:900px){.home-hero{height:auto;max-height:none;min-height:calc(100svh - 72px);padding:44px 0 25px}.bot-stage{width:min(400px,88vw)}}
+@media(max-width:600px){.home-nav{height:68px}.home-hero{min-height:calc(100svh - 68px);padding-top:34px}.login-card{padding:26px 22px}.login-card h1{font-size:27px}}
