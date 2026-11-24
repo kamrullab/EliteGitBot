@@ -172,6 +172,7 @@ Install the App only on repositories that should be monitored. EliteGitBot canno
 | `ADMIN_USERNAME` | yes | single administrator name |
 | `ADMIN_PASSWORD_HASH` | yes | `pbkdf2$iterations$salt$hash` value |
 | `SESSION_SECRET` | yes | at least 32 random bytes |
+| `CONFIG_ENCRYPTION_KEY` | yes | base64-encoded 32-byte AES key protecting dashboard-managed secrets |
 | `GEMINI_API_KEY`, `GEMINI_MODEL` | no | reserved external provider configuration |
 | `OLLAMA_BASE_URL`, `OLLAMA_MODEL` | no | reserved trusted Ollama endpoint configuration |
 | `AI_ENABLED` | no | enables the selected external provider when `true` |
@@ -194,7 +195,10 @@ npx wrangler secret put GITHUB_WEBHOOK_SECRET --config apps/worker/wrangler.json
 npx wrangler secret put ADMIN_USERNAME --config apps/worker/wrangler.jsonc
 npx wrangler secret put ADMIN_PASSWORD_HASH --config apps/worker/wrangler.jsonc
 npx wrangler secret put SESSION_SECRET --config apps/worker/wrangler.jsonc
+npx wrangler secret put CONFIG_ENCRYPTION_KEY --config apps/worker/wrangler.jsonc
 ```
+
+`ADMIN_USERNAME` and `ADMIN_PASSWORD_HASH` bootstrap the first login. After that, the administrator can change both from **General Settings**. External AI keys and provider options are managed from **AI Settings** and stored encrypted in D1; they are never returned to the browser.
 
 <a id="deployment"></a>
 ## ☁️ Provision and deploy

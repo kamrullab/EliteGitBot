@@ -3,12 +3,13 @@ import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
-import { login, logout, requireAuth } from "./services/auth";
+import { hashPassword, login, logout, requireAuth, verifyAdministrator } from "./services/auth";
 import { processEvent } from "./services/events";
 import type { EventJob, GitHubPayload } from "./types";
 import { verifyWebhook } from "./utils/crypto";
 import { GitHubClient } from "./github/client";
-import { createProvider } from "./ai/providers";
+import { createProvider, getAISettings, safeExternalUrl } from "./ai/providers";
+import { deleteManagedSecret, setManagedSecret } from "./services/managed-secrets";
 
 type AppEnv = { Bindings: Env; Variables: { userId: number } };
 const app = new Hono<AppEnv>();
@@ -98,14 +99,86 @@ app.post("/api/github/sync", async (c) => {
   for(const installation of installations.results){ const client=await GitHubClient.forInstallation(c.env,installation.github_installation_id); const result=await client.get<{repositories:Array<{id:number;name:string;full_name:string;private:boolean;visibility?:string;default_branch:string;archived:boolean;owner:{login:string}}> }>("/installation/repositories?per_page=100"); for(const repo of result.repositories){ const pk=await c.env.DB.prepare("SELECT id FROM github_installations WHERE github_installation_id=?").bind(installation.github_installation_id).first<{id:number}>(); if(pk){ await c.env.DB.prepare("INSERT INTO repositories(github_repository_id,installation_id,owner,name,full_name,visibility,default_branch,archived,last_activity_at) VALUES(?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP) ON CONFLICT(github_repository_id) DO UPDATE SET owner=excluded.owner,name=excluded.name,full_name=excluded.full_name,visibility=excluded.visibility,default_branch=excluded.default_branch,archived=excluded.archived,updated_at=CURRENT_TIMESTAMP").bind(repo.id,pk.id,repo.owner.login,repo.name,repo.full_name,repo.visibility??(repo.private?"private":"public"),repo.default_branch,repo.archived?1:0).run(); const saved=await c.env.DB.prepare("SELECT id FROM repositories WHERE github_repository_id=?").bind(repo.id).first<{id:number}>(); if(saved) await c.env.DB.prepare("INSERT OR IGNORE INTO repository_settings(repository_id) VALUES(?)").bind(saved.id).run(); count++; } } }
   return c.json({data:{repositoriesSynced:count}});
 });
-app.get("/api/settings", async (c) => { const system=await c.env.DB.prepare("SELECT key,value FROM system_settings").all<{key:string;value:string}>(); const ai=await c.env.DB.prepare("SELECT enabled,provider,model,max_input_size,max_output_tokens,temperature,private_code_external_enabled,review_instructions,issue_instructions FROM ai_provider_settings WHERE id=1").first(); return c.json({data:{system:Object.fromEntries(system.results.map(x=>[x.key,JSON.parse(x.value)])),ai:ai??{enabled:0,provider:"rule-based"}}}); });
-app.get("/api/ai/providers", (c) => c.json({data:[
-  {id:"rule-based",configured:true,active:c.env.AI_ENABLED!=="true"||c.env.AI_PROVIDER==="rule-based"},
-  {id:"gemini",configured:Boolean(c.env.GEMINI_API_KEY&&c.env.GEMINI_MODEL),active:c.env.AI_ENABLED==="true"&&c.env.AI_PROVIDER==="gemini"},
-  {id:"openai-compatible",configured:Boolean(c.env.AI_API_KEY&&c.env.AI_BASE_URL&&c.env.AI_MODEL&&c.env.AI_ALLOWED_HOSTS),active:c.env.AI_ENABLED==="true"&&c.env.AI_PROVIDER==="openai-compatible"}
-]}));
+app.get("/api/settings", async (c) => {
+  const [system, account, ai] = await Promise.all([
+    c.env.DB.prepare("SELECT key,value FROM system_settings").all<{key:string;value:string}>(),
+    c.env.DB.prepare("SELECT username,updated_at FROM users WHERE id=?").bind(c.get("userId")).first<{ username: string; updated_at: string }>(),
+    getAISettings(c.env)
+  ]);
+  return c.json({data:{
+    system:Object.fromEntries(system.results.map(x=>[x.key,JSON.parse(x.value)])),
+    account,
+    ai:{ enabled:Boolean(ai.enabled),provider:ai.provider,model:ai.model,baseUrl:ai.base_url,allowedHosts:ai.allowed_hosts,maxInputSize:ai.max_input_size,privateCodeExternalEnabled:Boolean(ai.private_code_external_enabled),apiKeyConfigured:ai.apiKeyConfigured }
+  }});
+});
+
+const accountSettingsSchema = z.object({
+  currentPassword: z.string().min(8).max(200),
+  username: z.string().trim().min(3).max(100).regex(/^[A-Za-z0-9_.-]+$/),
+  newPassword: z.string().min(12).max(200).optional()
+});
+app.patch("/api/settings/account", zValidator("json", accountSettingsSchema), async (c) => {
+  const value = c.req.valid("json");
+  const userId = c.get("userId");
+  if (!(await verifyAdministrator(c.env.DB, userId, value.currentPassword))) return c.json({error:{code:"INVALID_PASSWORD",message:"Current password is incorrect"}},403);
+  const passwordHash = value.newPassword ? await hashPassword(value.newPassword) : null;
+  try {
+    await c.env.DB.prepare("UPDATE users SET username=?,password_hash=COALESCE(?,password_hash),updated_at=CURRENT_TIMESTAMP WHERE id=?").bind(value.username,passwordHash,userId).run();
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("UNIQUE")) return c.json({error:{code:"USERNAME_EXISTS",message:"That username is already in use"}},409);
+    throw error;
+  }
+  await c.env.DB.prepare("INSERT INTO activity_logs(event_type,actor,description) VALUES('admin_account_updated',?,'Administrator credentials updated')").bind(value.username).run();
+  await c.env.DB.prepare("DELETE FROM admin_sessions").run();
+  return c.json({data:{success:true,reauthenticate:true}});
+});
+
+const aiSettingsSchema = z.object({
+  currentPassword: z.string().min(8).max(200),
+  enabled: z.boolean(),
+  provider: z.enum(["rule-based","gemini","openai-compatible"]),
+  model: z.string().trim().max(200).nullable(),
+  baseUrl: z.string().trim().max(500).nullable(),
+  allowedHosts: z.string().trim().max(500).nullable(),
+  maxInputSize: z.number().int().min(1000).max(200000),
+  privateCodeExternalEnabled: z.boolean(),
+  apiKey: z.string().trim().min(8).max(1000).optional(),
+  removeApiKey: z.boolean().optional()
+});
+app.patch("/api/settings/ai", zValidator("json", aiSettingsSchema), async (c) => {
+  const value = c.req.valid("json");
+  if (!(await verifyAdministrator(c.env.DB,c.get("userId"),value.currentPassword))) return c.json({error:{code:"INVALID_PASSWORD",message:"Current password is incorrect"}},403);
+  const enabled = value.provider !== "rule-based" && value.enabled;
+  if (enabled && !value.model) return c.json({error:{code:"MODEL_REQUIRED",message:"A model is required for external AI"}},400);
+  if (value.provider === "openai-compatible") {
+    if (!value.baseUrl || !value.allowedHosts) return c.json({error:{code:"ENDPOINT_REQUIRED",message:"Base URL and allowed hosts are required"}},400);
+    try { safeExternalUrl(value.baseUrl,value.allowedHosts); } catch (error) { return c.json({error:{code:"INVALID_ENDPOINT",message:error instanceof Error?error.message:"Invalid AI endpoint"}},400); }
+  }
+  const previous = await c.env.DB.prepare("SELECT provider FROM ai_provider_settings WHERE id=1").first<{provider:string}>();
+  const existingKey = Boolean(await c.env.DB.prepare("SELECT 1 configured FROM managed_secrets WHERE name='ai_api_key'").first());
+  const providerChanged = Boolean(previous && previous.provider !== value.provider && value.provider !== "rule-based");
+  const configured = value.apiKey ? true : value.removeApiKey || providerChanged ? false : existingKey;
+  if (enabled && providerChanged && !value.apiKey) return c.json({error:{code:"NEW_API_KEY_REQUIRED",message:"Add the correct API key when changing external providers"}},400);
+  if (enabled && !configured) return c.json({error:{code:"API_KEY_REQUIRED",message:"Add an API key before enabling external AI"}},400);
+  if (value.apiKey) await setManagedSecret(c.env,"ai_api_key",value.apiKey);
+  if ((value.removeApiKey || providerChanged) && !value.apiKey) await deleteManagedSecret(c.env,"ai_api_key");
+  await c.env.DB.prepare("UPDATE ai_provider_settings SET enabled=?,provider=?,model=?,base_url=?,allowed_hosts=?,max_input_size=?,private_code_external_enabled=?,updated_at=CURRENT_TIMESTAMP WHERE id=1")
+    .bind(enabled?1:0,value.provider,value.model||null,value.provider==="openai-compatible"?value.baseUrl:null,value.provider==="openai-compatible"?value.allowedHosts:null,value.maxInputSize,value.privateCodeExternalEnabled?1:0).run();
+  await c.env.DB.prepare("INSERT INTO activity_logs(event_type,actor,description,metadata) SELECT 'ai_settings_updated',username,'AI provider settings updated',? FROM users WHERE id=?")
+    .bind(JSON.stringify({provider:value.provider,enabled,apiKeyChanged:Boolean(value.apiKey||value.removeApiKey)}),c.get("userId")).run();
+  return c.json({data:{success:true,apiKeyConfigured:configured}});
+});
+
+app.get("/api/ai/providers", async (c) => {
+  const ai=await getAISettings(c.env);
+  return c.json({data:[
+    {id:"rule-based",configured:true,active:!ai.enabled||ai.provider==="rule-based"},
+    {id:"gemini",configured:ai.apiKeyConfigured&&Boolean(ai.model),active:Boolean(ai.enabled)&&ai.provider==="gemini"},
+    {id:"openai-compatible",configured:ai.apiKeyConfigured&&Boolean(ai.model&&ai.base_url&&ai.allowed_hosts),active:Boolean(ai.enabled)&&ai.provider==="openai-compatible"}
+  ]});
+});
 app.post("/api/ai/test", async (c) => {
-  const provider=createProvider(c.env,true);
+  const provider=await createProvider(c.env,true);
   await provider.analyzeIssue("EliteGitBot connection test","Return a safe automated test acknowledgement.");
   return c.json({data:{provider:provider.name,ok:true,message:`${provider.name} completed a test request`}});
 });

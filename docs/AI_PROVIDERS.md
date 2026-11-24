@@ -21,7 +21,9 @@ For a public repository and a fully free setup, start with `rule-based`. Add Gem
 
 ## Production quick start
 
-AI configuration has two parts:
+For production, sign in and open **AI Settings**. The dashboard can enable/disable providers, set the model and endpoint, add/replace/remove the API key, control private-repository sharing, and test the connection. Saved keys are AES-GCM encrypted in D1 and never returned to the browser.
+
+CLI configuration remains available for local development and migration. It has two parts:
 
 1. Non-secret values go in `apps/worker/wrangler.jsonc` under `vars`.
 2. API keys go to Cloudflare encrypted secrets with `wrangler secret put`.

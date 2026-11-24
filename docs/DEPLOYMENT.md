@@ -91,7 +91,7 @@ Copy the resulting `pbkdf2$...` value. Do not store the plaintext password in an
 
 The generator uses 100,000 PBKDF2-SHA-256 iterations, matching the Cloudflare Workers Web Crypto runtime limit. Do not substitute a higher iteration count without changing the password-verification strategy.
 
-Generate independent random values for `SESSION_SECRET` and `GITHUB_WEBHOOK_SECRET`. Each should contain at least 32 random bytes.
+Generate independent random values for `SESSION_SECRET` and `GITHUB_WEBHOOK_SECRET`. Each should contain at least 32 random bytes. Generate a separate 32-byte base64 value for `CONFIG_ENCRYPTION_KEY`; it encrypts dashboard-managed API keys with AES-GCM.
 
 ## 7. Upload required Worker secrets
 
@@ -104,7 +104,10 @@ npx wrangler secret put GITHUB_WEBHOOK_SECRET --config apps/worker/wrangler.json
 npx wrangler secret put ADMIN_USERNAME --config apps/worker/wrangler.jsonc
 npx wrangler secret put ADMIN_PASSWORD_HASH --config apps/worker/wrangler.jsonc
 npx wrangler secret put SESSION_SECRET --config apps/worker/wrangler.jsonc
+npx wrangler secret put CONFIG_ENCRYPTION_KEY --config apps/worker/wrangler.jsonc
 ```
+
+`ADMIN_USERNAME` and `ADMIN_PASSWORD_HASH` are bootstrap credentials. After the first successful login, username and password changes are stored securely in D1 and managed from **General Settings**. `CONFIG_ENCRYPTION_KEY` must remain a Cloudflare secret and cannot be viewed from the dashboard.
 
 For `GITHUB_PRIVATE_KEY`, paste the complete PEM including the BEGIN/END lines. Wrangler secrets are not committed and normal deployments do not delete existing secrets.
 
@@ -126,7 +129,17 @@ The committed production default is free local rule analysis:
 "AI_PROVIDER": "rule-based"
 ```
 
-To enable Gemini, change the non-secret `vars` in `apps/worker/wrangler.jsonc`:
+The preferred production workflow is **Dashboard → AI Settings**:
+
+1. Select `Gemini` or `OpenAI-compatible / OpenRouter`.
+2. Enter the model and, for OpenAI-compatible services, the HTTPS base URL and exact allowed host.
+3. Paste the API key and enter the current administrator password.
+4. Save, enable the provider, then use **Test connection**.
+5. Keep private-repository sharing disabled unless the provider's privacy terms are acceptable.
+
+The browser never receives a saved API key. The Worker encrypts it with `CONFIG_ENCRYPTION_KEY` before writing it to D1. Replacing or removing the key is available from the same page.
+
+Environment values remain available as a local-development or migration fallback. To enable Gemini that way, change the non-secret `vars` in `apps/worker/wrangler.jsonc`:
 
 ```jsonc
 "AI_ENABLED": "true",

@@ -16,13 +16,29 @@ export async function verifyPassword(password: string, encoded: string): Promise
   return secureEqual(actual, expectedB64);
 }
 
+export async function hashPassword(password: string): Promise<string> {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+  const derived = new Uint8Array(await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations: 100000 }, key, 256));
+  const base64 = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes));
+  return `pbkdf2$100000$${base64(salt)}$${base64(derived)}`;
+}
+
+export async function verifyAdministrator(db: D1Database, userId: number, password: string): Promise<boolean> {
+  const row = await db.prepare("SELECT password_hash FROM users WHERE id=?").bind(userId).first<{ password_hash: string }>();
+  return Boolean(row && await verifyPassword(password, row.password_hash));
+}
+
 type AuthEnv = { Bindings: Env; Variables: { userId: number } };
 
 export async function login(c: Context<AuthEnv>, username: string, password: string): Promise<boolean> {
-  if (!(await secureEqual(username, c.env.ADMIN_USERNAME)) || !(await verifyPassword(password, c.env.ADMIN_PASSWORD_HASH))) return false;
-  await c.env.DB.prepare("INSERT INTO users (username, password_hash) VALUES (?, ?) ON CONFLICT(username) DO UPDATE SET password_hash=excluded.password_hash, updated_at=CURRENT_TIMESTAMP").bind(username, c.env.ADMIN_PASSWORD_HASH).run();
-  const user = await c.env.DB.prepare("SELECT id FROM users WHERE username=?").bind(username).first<{ id: number }>();
-  if (!user) return false;
+  let user = await c.env.DB.prepare("SELECT id,password_hash FROM users WHERE username=?").bind(username).first<{ id: number; password_hash: string }>();
+  const userCount = await c.env.DB.prepare("SELECT COUNT(*) count FROM users").first<{ count: number }>();
+  if (!user && (userCount?.count ?? 0) === 0 && await secureEqual(username, c.env.ADMIN_USERNAME) && await verifyPassword(password, c.env.ADMIN_PASSWORD_HASH)) {
+    await c.env.DB.prepare("INSERT INTO users (username,password_hash) VALUES (?,?)").bind(username, c.env.ADMIN_PASSWORD_HASH).run();
+    user = await c.env.DB.prepare("SELECT id,password_hash FROM users WHERE username=?").bind(username).first<{ id: number; password_hash: string }>();
+  }
+  if (!user || !(await verifyPassword(password, user.password_hash))) return false;
   const session = randomToken();
   const csrf = randomToken();
   const expires = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString();

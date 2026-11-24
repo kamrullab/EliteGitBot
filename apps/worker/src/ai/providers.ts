@@ -1,5 +1,6 @@
 import type { Analysis, Finding, PullFile } from "../types";
 import { z } from "zod";
+import { getManagedSecret } from "../services/managed-secrets";
 
 export interface AIProvider {
   readonly name: string;
@@ -70,7 +71,7 @@ function parseJsonObject(text: string): unknown {
   return JSON.parse(cleaned.slice(start, end + 1)) as unknown;
 }
 
-function safeExternalUrl(value: string, allowedHosts: string): string {
+export function safeExternalUrl(value: string, allowedHosts: string): string {
   const url = new URL(value);
   if (url.protocol !== "https:") throw new Error("External AI endpoints must use HTTPS");
   const host = url.hostname.toLowerCase();
@@ -150,14 +151,48 @@ class FallbackProvider implements AIProvider {
   }
 }
 
-export function createProvider(env?: Env, allowExternal = false): AIProvider {
+type StoredAISettings = {
+  enabled: number;
+  provider: "gemini" | "openai-compatible" | "rule-based";
+  model: string | null;
+  base_url: string | null;
+  allowed_hosts: string | null;
+  max_input_size: number;
+  private_code_external_enabled: number;
+};
+
+export async function getAISettings(env: Env): Promise<StoredAISettings & { apiKeyConfigured: boolean }> {
+  const stored = await env.DB.prepare("SELECT enabled,provider,model,base_url,allowed_hosts,max_input_size,private_code_external_enabled FROM ai_provider_settings WHERE id=1").first<StoredAISettings>();
+  if (stored) return { ...stored, apiKeyConfigured: Boolean(await env.DB.prepare("SELECT 1 configured FROM managed_secrets WHERE name='ai_api_key'").first()) };
+  return {
+    enabled: env.AI_ENABLED === "true" ? 1 : 0,
+    provider: env.AI_PROVIDER ?? "rule-based",
+    model: env.AI_MODEL ?? env.GEMINI_MODEL ?? null,
+    base_url: env.AI_BASE_URL ?? null,
+    allowed_hosts: env.AI_ALLOWED_HOSTS ?? null,
+    max_input_size: Number(env.AI_MAX_INPUT_CHARS ?? 50000),
+    private_code_external_enabled: env.AI_PRIVATE_REPOSITORIES_ENABLED === "true" ? 1 : 0,
+    apiKeyConfigured: Boolean(env.AI_API_KEY || env.GEMINI_API_KEY)
+  };
+}
+
+export async function createProvider(env?: Env, allowExternal = false): Promise<AIProvider> {
   const fallback = new RuleBasedProvider();
-  if (!env || env.AI_ENABLED !== "true" || !allowExternal) return fallback;
-  const maxInputChars = Math.min(200000, Math.max(1000, Number(env.AI_MAX_INPUT_CHARS ?? 50000)));
-  if (env.AI_PROVIDER === "gemini" && env.GEMINI_API_KEY && env.GEMINI_MODEL) return new FallbackProvider(new GeminiProvider({ apiKey: env.GEMINI_API_KEY, baseUrl: "https://generativelanguage.googleapis.com", model: env.GEMINI_MODEL, maxInputChars }));
-  if (env.AI_PROVIDER === "openai-compatible" && env.AI_API_KEY && env.AI_BASE_URL && env.AI_MODEL) {
-    const baseUrl = safeExternalUrl(env.AI_BASE_URL, env.AI_ALLOWED_HOSTS ?? "");
-    return new FallbackProvider(new OpenAICompatibleProvider({ apiKey: env.AI_API_KEY, baseUrl, model: env.AI_MODEL, maxInputChars }));
+  if (!env || !allowExternal) return fallback;
+  const settings = await getAISettings(env);
+  if (!settings.enabled || settings.provider === "rule-based") return fallback;
+  const maxInputChars = Math.min(200000, Math.max(1000, settings.max_input_size));
+  const storedKey = await getManagedSecret(env, "ai_api_key");
+  if (settings.provider === "gemini") {
+    const apiKey = storedKey ?? env.GEMINI_API_KEY;
+    if (apiKey && settings.model) return new FallbackProvider(new GeminiProvider({ apiKey, baseUrl: "https://generativelanguage.googleapis.com", model: settings.model, maxInputChars }));
+  }
+  if (settings.provider === "openai-compatible") {
+    const apiKey = storedKey ?? env.AI_API_KEY;
+    if (apiKey && settings.base_url && settings.model) {
+      const baseUrl = safeExternalUrl(settings.base_url, settings.allowed_hosts ?? "");
+      return new FallbackProvider(new OpenAICompatibleProvider({ apiKey, baseUrl, model: settings.model, maxInputChars }));
+    }
   }
   return fallback;
 }

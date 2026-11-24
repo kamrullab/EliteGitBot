@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { verifyWebhook } from "../src/utils/crypto";
 import { GeminiProvider, OpenAICompatibleProvider, RuleBasedProvider } from "../src/ai/providers";
-import { verifyPassword } from "../src/services/auth";
+import { hashPassword, verifyPassword } from "../src/services/auth";
+import { decryptValue, encryptValue } from "../src/services/managed-secrets";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -29,6 +30,21 @@ describe("administrator password verification", () => {
     expect(await verifyPassword(password, encoded)).toBe(true);
     expect(await verifyPassword("wrong-password", encoded)).toBe(false);
     expect(await verifyPassword(password, encoded.replace("pbkdf2$100000$", "pbkdf2$210000$"))).toBe(false);
+  });
+  it("generates a password hash accepted by the Worker verifier", async () => {
+    const encoded = await hashPassword("a-new-strong-password");
+    expect(encoded).toMatch(/^pbkdf2\$100000\$/);
+    expect(await verifyPassword("a-new-strong-password", encoded)).toBe(true);
+  });
+});
+
+describe("managed secret encryption", () => {
+  it("round-trips with AES-GCM and binds ciphertext to its setting name", async () => {
+    const rootKey = Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString("base64");
+    const encrypted = await encryptValue(rootKey, "ai_api_key", "private-provider-key");
+    expect(encrypted.ciphertext).not.toContain("private-provider-key");
+    expect(await decryptValue(rootKey, "ai_api_key", encrypted)).toBe("private-provider-key");
+    await expect(decryptValue(rootKey, "different_name", encrypted)).rejects.toThrow();
   });
 });
 
