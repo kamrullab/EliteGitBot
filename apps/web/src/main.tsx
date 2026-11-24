@@ -32,6 +32,16 @@ const routes = createBrowserRouter([
     { path: "automation", element: <Settings /> },
     { path: "github", element: <Settings /> }
   ]},
+  { path: "/repositories", element: <Navigate to="/dashboard/repositories" replace /> },
+  { path: "/pull-requests", element: <Navigate to="/dashboard/pull-requests" replace /> },
+  { path: "/issues", element: <Navigate to="/dashboard/issues" replace /> },
+  { path: "/security", element: <Navigate to="/dashboard/security" replace /> },
+  { path: "/workflows", element: <Navigate to="/dashboard/workflows" replace /> },
+  { path: "/activity", element: <Navigate to="/dashboard/activity" replace /> },
+  { path: "/ai", element: <Navigate to="/dashboard/ai" replace /> },
+  { path: "/automation", element: <Navigate to="/dashboard/automation" replace /> },
+  { path: "/github", element: <Navigate to="/dashboard/github" replace /> },
+  { path: "/settings", element: <Navigate to="/dashboard/settings" replace /> },
   { path: "*", element: <Navigate to="/" replace /> }
 ]);
 ReactDOM.createRoot(document.getElementById("root")!).render(<React.StrictMode><QueryClientProvider client={queryClient}><RouterProvider router={routes} /></QueryClientProvider></React.StrictMode>);
