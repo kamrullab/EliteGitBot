@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { verifyWebhook } from "../src/utils/crypto";
 import { GeminiProvider, OpenAICompatibleProvider, RuleBasedProvider } from "../src/ai/providers";
+import { verifyPassword } from "../src/services/auth";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -13,6 +14,21 @@ describe("GitHub webhook verification", () => {
     expect(await verifyWebhook(body, `sha256=${digest}`, secret)).toBe(true);
     expect(await verifyWebhook(`${body}x`, `sha256=${digest}`, secret)).toBe(false);
     expect(await verifyWebhook(body, undefined, secret)).toBe(false);
+  });
+});
+
+describe("administrator password verification", () => {
+  it("accepts a Worker-compatible 100,000-iteration PBKDF2 hash", async () => {
+    const password = "correct-horse-battery-staple";
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+    const derived = new Uint8Array(await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations: 100000 }, key, 256));
+    const base64 = (bytes: Uint8Array) => Buffer.from(bytes).toString("base64");
+    const encoded = `pbkdf2$100000$${base64(salt)}$${base64(derived)}`;
+
+    expect(await verifyPassword(password, encoded)).toBe(true);
+    expect(await verifyPassword("wrong-password", encoded)).toBe(false);
+    expect(await verifyPassword(password, encoded.replace("pbkdf2$100000$", "pbkdf2$210000$"))).toBe(false);
   });
 });
 

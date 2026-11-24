@@ -89,6 +89,8 @@ node scripts/hash-password.mjs "use-a-long-unique-password"
 
 Copy the resulting `pbkdf2$...` value. Do not store the plaintext password in any file.
 
+The generator uses 100,000 PBKDF2-SHA-256 iterations, matching the Cloudflare Workers Web Crypto runtime limit. Do not substitute a higher iteration count without changing the password-verification strategy.
+
 Generate independent random values for `SESSION_SECRET` and `GITHUB_WEBHOOK_SECRET`. Each should contain at least 32 random bytes.
 
 ## 7. Upload required Worker secrets

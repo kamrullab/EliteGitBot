@@ -4,11 +4,11 @@ import { randomToken, secureEqual, sha256 } from "../utils/crypto";
 
 const SESSION_COOKIE = "elite_session";
 
-async function verifyPassword(password: string, encoded: string): Promise<boolean> {
+export async function verifyPassword(password: string, encoded: string): Promise<boolean> {
   const [algorithm, iterationsText, saltB64, expectedB64] = encoded.split("$");
   if (algorithm !== "pbkdf2" || !iterationsText || !saltB64 || !expectedB64) return false;
   const iterations = Number(iterationsText);
-  if (!Number.isInteger(iterations) || iterations < 100000) return false;
+  if (!Number.isInteger(iterations) || iterations !== 100000) return false;
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
   const salt = Uint8Array.from(atob(saltB64), (char) => char.charCodeAt(0));
   const derived = new Uint8Array(await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations }, key, 256));
