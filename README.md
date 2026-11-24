@@ -16,7 +16,7 @@ Monitor repositories, review pull requests, triage issues, track workflows, and 
 [![Security Analysis](https://github.com/kamrullab/EliteGitBot/actions/workflows/security-analysis.yml/badge.svg)](https://github.com/kamrullab/EliteGitBot/actions/workflows/security-analysis.yml)
 [![CI](https://github.com/kamrullab/EliteGitBot/actions/workflows/ci.yml/badge.svg)](https://github.com/kamrullab/EliteGitBot/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-22C55E.svg)](LICENSE)
-[![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-22.12%2B-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
 [![Database](https://img.shields.io/badge/Database-Cloudflare_D1-F38020?logo=cloudflare&logoColor=white)](https://developers.cloudflare.com/d1/)
 [![AI Optional](https://img.shields.io/badge/AI-Optional-8B5CF6)](#analysis-providers)
 [![Core Mode](https://img.shields.io/badge/Core_Mode-No_Paid_API-22C55E)](#analysis-providers)
@@ -113,7 +113,7 @@ Queues provide at-least-once delivery; database uniqueness makes processing idem
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js 22.12+
 - A Cloudflare account with Workers, D1, and Queues enabled
 - A GitHub App
 

@@ -13,5 +13,5 @@
     "cf-typegen": "npm run cf-typegen -w @elite-gitbot/worker",
     "deploy": "npm run deploy -w @elite-gitbot/worker"
   },
-  "engines": { "node": ">=20" }
+  "engines": { "node": ">=22.12.0" }
 }

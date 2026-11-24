@@ -7,7 +7,7 @@ This guide deploys the Worker API and React dashboard together using Workers Sta
 
 ## 1. Prerequisites
 
-- Node.js 20+
+- Node.js 22.12+
 - A free Cloudflare account
 - A GitHub account that can create a GitHub App
 - This repository cloned locally
