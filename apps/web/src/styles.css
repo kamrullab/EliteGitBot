@@ -124,15 +124,16 @@ body{background:#f6f7f9;line-height:1.5}button,input,select{font:inherit}button{
 /* Data tables fit the available width and keep scrolling controls visually clean. */
 .data-page .table-card{flex:0 1 auto!important;max-height:calc(100dvh - 220px);overflow-y:auto;overflow-x:hidden;scrollbar-width:none;-ms-overflow-style:none}
 .data-page .table-card::-webkit-scrollbar{display:none;width:0;height:0}
-.data-page table{width:100%;table-layout:fixed}
-.data-page th,.data-page td{white-space:normal;overflow-wrap:anywhere;word-break:normal;vertical-align:middle}
+.data-page table{width:100%;table-layout:auto}
+.data-page th,.data-page td{white-space:normal;overflow-wrap:normal;word-break:normal;vertical-align:middle}
 .data-page th{line-height:1.3}
 .data-page td{height:auto;min-height:58px}
 .data-page .table-link{max-width:100%;white-space:normal;line-height:1.35}
-.data-page th:first-child,.data-page td:first-child{width:28%}
-.data-page .url-column{width:8%}
-@media(max-width:1200px) and (min-width:901px){.data-page th:first-child,.data-page td:first-child{width:22%}.data-page table{font-size:12px}.data-page th,.data-page td{padding-inline:11px}}
-@media(max-width:900px){.data-page .table-card{max-height:none;overflow:visible}.data-page th:first-child,.data-page td:first-child,.data-page .url-column{width:auto}}
+.data-page .url-column{width:58px;text-align:center}
+.table-action{display:inline-grid;place-items:center;width:34px;height:34px;margin:auto;border:1px solid #8b5cf640;border-radius:9px;color:#8b5cf6;background:#8b5cf610;text-decoration:none;transition:background-color .18s,transform .18s}.table-action:hover{background:#8b5cf622;transform:translateY(-1px)}
+.data-page .table-time{white-space:nowrap}
+@media(max-width:1200px) and (min-width:901px){.data-page table{font-size:12px}.data-page th,.data-page td{padding-inline:10px}}
+@media(max-width:900px){.data-page .table-card{max-height:none;overflow:visible}.data-page .url-column{width:auto;text-align:inherit}.data-page .table-time{white-space:normal}.table-action{margin-left:auto}}
 
 /* Keep the public hero inside the first viewport and make sign-in compact. */
 .home-nav{height:72px}
